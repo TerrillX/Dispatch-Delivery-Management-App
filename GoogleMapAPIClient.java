@@ -1,3 +1,6 @@
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 public class GoogleMapAPIClient {
 
@@ -20,5 +23,52 @@ public class GoogleMapAPIClient {
         );
         Route result = new Route(response.getStartAddress(), response.getEndAddress(), response.getDuration);
         return new Route();
+    }
+}
+
+class DirectionsResponse {
+        /* String json = "{'id': 1001, "
+            + "'firstName': 'Lokesh',"
+            + "'lastName': 'Gupta',"
+            + "'email': 'howtodoinjava@gmail.com'}";
+        */
+    private JsonElement jsonElement = new JsonParser().parse(json);
+    private JsonObject jsonObject = jsonElement.getAsJsonObject();
+    private JsonArray jsonArray = jsonObject.getJsonArray("routes");
+    
+    public String getStartAddress() {
+        for (int i = 0; i < jsonArray.length(); i++) {
+            if (jsonArray.getJSONObject(i) == "start_location") {
+                String start_address = jsonArray.getJSONObject(i).getString("start_address");
+            }
+        }
+        return start_address;
+    }
+       
+    public String getEndAddress() {
+        for (int i = 0; i < jsonArray.length(); i++) {
+            if (jsonArray.getJSONObject(i) == "start_location") {
+                String end_address = jsonArray.getJSONObject(i).getString("end_address");
+            }
+        }
+        return end_address;
+    }
+
+    public String getDuration() {
+        for (int i = 0; i < jsonArray.length(); i++) {
+            if (jsonArray.getJSONObject(i) == "duration") {
+                String duration = jsonArray.getJSONObject(i).getString("duration");
+            }
+        }
+        return duration;
+    }
+
+    public String getDistance() {
+        for (int i = 0; i < jsonArray.length(); i++) {
+            if (jsonArray.getJSONObject(i) == "distance") {
+                String duration = jsonArray.getJSONObject(i).getString("value");
+            }
+        }
+        return duration;
     }
 }
