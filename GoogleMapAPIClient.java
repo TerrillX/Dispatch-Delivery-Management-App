@@ -71,4 +71,18 @@ class DirectionsResponse {
         }
         return duration;
     }
+
+    public String getDistance() {
+        for (int i = 0; i < jsonArray.length(); i++) {
+            if (jsonArray.getJSONObject(i) == "distance") {
+                String duration = jsonArray.getJSONObject(i).getString("value");
+            }
+        }
+        return duration;
+    }
+
+    public Long getDroneDuration() {
+        long dst = Long.parseLong(getDistance());
+        return dst / 6400;
+    }
 }
