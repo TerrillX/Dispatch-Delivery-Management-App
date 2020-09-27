@@ -4,8 +4,8 @@ import com.google.gson.JsonParser;
 
 public class GoogleMapAPIClient {
 
-    @Value("${api.key}")
-    private String apiKey;
+    //@Value("${api.key}")
+    private final String apiKey = "AIzaSyBjnVnvNgiL3PpPS5cNDghW85fqQM8jbsk";
 
     @Autowired
     private RestTemplate restTemplate;
@@ -89,7 +89,7 @@ public class GoogleMapAPIClient {
             jsonObject = jsonElement.getAsJsonObject();
 
             // Get route array and pick up the first array by default
-            jsonObjectResult = jsonObject.getAsJsonArray("routes").get(0).getAsJsonObject();
+            jsonObjectResult = jsonObject.getAsJsonArray("routes").get(0).getAsJsonArray("legs").get(0).getAsJsonObject();
         }
 
         // Method for getting start_address
