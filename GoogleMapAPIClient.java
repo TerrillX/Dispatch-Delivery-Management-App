@@ -10,79 +10,125 @@ public class GoogleMapAPIClient {
     @Autowired
     private RestTemplate restTemplate;
 
-    @RequestMapping("/robotOption", method = RequestMapping.GET)
-    public Route getRoute(@RequestParam("from") String from, @RequestParam("to") String to, @RequestParam("DEFAULT_STATION") String station) {
-        
-        DirectionsResponse response = restTemplate.getForObject(
+//   @RequestMapping("/robotOption", method = RequestMapping.GET)
+//    public Route getRoute(@RequestParam("from") String from, @RequestParam("to") String to, @RequestParam("DEFAULT_STATION") String station) {
+    public Route getRoute(String from, String to, String station) {     
+        restTemplate = new RestTemplate();
+        String[] response = new String[3];
+
+        response[0] = restTemplate.getForObject(
             "https://maps.googleapis.com/maps/api/directions/json?"
             + "origin=" + station
-            + "&destination=" + to
-            + "&waypoints=" + from
+            + "&destination=" + from
+            //+ "&waypoints=" + xxx
             + "&key=" + apiKey,
-            DirectionsResponse.class
+            String.class
         );
-        Route result = new Route(response.getStartAddress(), response.getEndAddress(), response.getDuration);
-        return new Route();
-    }
-}
 
-class DirectionsResponse {
-        /* String json = "{'id': 1001, "
-            + "'firstName': 'Lokesh',"
-            + "'lastName': 'Gupta',"
-            + "'email': 'howtodoinjava@gmail.com'}";
-        */
-    private JsonElement jsonElement = new JsonParser().parse(json);
-    private JsonObject jsonObject = jsonElement.getAsJsonObject();
-    private JsonArray jsonArray = jsonObject.getJsonArray("routes");
+        response[1] = restTemplate.getForObject(
+            "https://maps.googleapis.com/maps/api/directions/json?"
+            + "origin=" + from
+            + "&destination=" + to
+            //+ "&waypoints=" + xxx
+            + "&key=" + apiKey,
+            String.class
+        );
+
+        response[2] = restTemplate.getForObject(
+            "https://maps.googleapis.com/maps/api/directions/json?"
+            + "origin=" + to
+            + "&destination=" + station
+            //+ "&waypoints=" + xxx
+            + "&key=" + apiKey,
+            String.class
+        );
+        
+        DirectionsResponse[] directionsResponse = new DirectionsResponse[3];
+
+        directionsResponse[0] = new DirectionsResponse(response[0]);
+        directionsResponse[1] = new DirectionsResponse(response[1]);
+        directionsResponse[2] = new DirectionsResponse(response[2]);
+
+        Route result = new Route(directionsResponse[1].getStartAddress(),
+                                directionsResponse[1].getEndAddress(),
+
+                                // For robot
+                                // - station2user
+                                directionsResponse[0].getRobotDuration(),
+                            
+                                // - user2dest
+                                directionsResponse[1].getRobotDuration(),
+                                directionsResponse[1].getRobotDistance(),
+
+                                // - dest2station
+                                directionsResponse[2].getRobotDuration(),
+
+
+                                // For drone
+                                // - station2user
+                                directionsResponse[0].getDroneDuration(),
+
+                                // - user2dest
+                                directionsResponse[1].getDroneDuration(),
+                                directionsResponse[1].getDroneDistance(),
+
+                                // - dest2station
+                                directionsResponse[2].getDroneDuration(),
+                                );
+        return result;
+    }
+
+    private class DirectionsResponse {
+
+        private JsonElement jsonElement;
+        private JsonObject jsonObject;
+        private JsonArray jsonObjectResult;
+        
+        public DirectionsResponse(String json) {
+            jsonElement = new JsonParser().parse(json);
+            jsonObject = jsonElement.getAsJsonObject();
+
+            // Get route array and pick up the first array by default
+            jsonObjectResult = jsonObject.getAsJsonArray("routes").get(0).getAsJsonObject();
+        }
+
+        // Method for getting start_address
+        public String getStartAddress() {
+            String start_address = jsonObjectResult.get("start_address").getAsString();
+            return start_address;
+        }
+        
+        // Method for getting end_address
+        public String getEndAddress() {
+            String end_address = jsonObjectResult.get("end_address").getAsString();
+            return end_address;
+        }
     
-    public String getStartAddress() {
-        for (int i = 0; i < jsonArray.length(); i++) {
-            if (jsonArray.getJSONObject(i) == "start_location") {
-                String start_address = jsonArray.getJSONObject(i).getString("start_address");
-            }
+        // Method for getting robotDuration
+        public long getRobotDuration() {
+                    String duration = jsonObjectResult.get("duration").getAsObject().get("value").getAsString();
+            long durationValue = Long.parseLong(duration);
+            return durationValue;
         }
-        return start_address;
-    }
-       
-    public String getEndAddress() {
-        for (int i = 0; i < jsonArray.length(); i++) {
-            if (jsonArray.getJSONObject(i) == "start_location") {
-                String end_address = jsonArray.getJSONObject(i).getString("end_address");
-            }
+    
+        // Method for getting robotDistance
+        public long getRobotDistance() {
+            String robotDistance = jsonObjectResult.get("distance").getAsObject().get("value").getAsString();
+            long robotDistanceValue = Long.parseLong(robotDistance);
+            return robotDistanceValue;
         }
-        return end_address;
-    }
 
-    public String getDuration() {
-        for (int i = 0; i < jsonArray.length(); i++) {
-            if (jsonArray.getJSONObject(i) == "duration") {
-                String duration = jsonArray.getJSONObject(i).getString("duration");
-            }
+        // Method for getting droneDuration
+        public Long getDroneDuration() {
+            long droneDistanceValue = getDroneDistance();
+            return droneDistanceValue / 6400;
         }
-        return duration;
-    }
 
-    public String getDistance() {
-        for (int i = 0; i < jsonArray.length(); i++) {
-            if (jsonArray.getJSONObject(i) == "distance") {
-                String duration = jsonArray.getJSONObject(i).getString("value");
-            }
+        // Method for getting droneDistance
+        public long getDroneDistance() {
+            String droneDistance = jsonObjectResult.get("distance").getAsObject().get("value").getAsString();
+            long droneDistanceValue = Long.parseLong(droneDistance);
+            return droneDistanceValue;
         }
-        return duration;
-    }
-
-    public String getDistance() {
-        for (int i = 0; i < jsonArray.length(); i++) {
-            if (jsonArray.getJSONObject(i) == "distance") {
-                String duration = jsonArray.getJSONObject(i).getString("value");
-            }
-        }
-        return duration;
-    }
-
-    public Long getDroneDuration() {
-        long dst = Long.parseLong(getDistance());
-        return dst / 6400;
     }
 }
